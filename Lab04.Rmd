@@ -1,0 +1,161 @@
+---
+title: "Lab 04"
+output:  
+  html_document:
+  df_print: paged
+  keep_md: true 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( message=F, warning=F )
+
+#Set up
+
+setwd("/Users/Stephanie/Google Drive/ssw/MPA/DDM 2/syr shape files")
+unzip("01-05-2015.zip")
+
+library(maptools)
+library(sp)
+library(dplyr)
+library(pander)
+
+syr <- readShapePoly(fn="01-05-2015",
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+```
+
+###Question 1: Single Family Homes
+
+```{r}
+#Table
+syr.dat <- as.data.frame(syr)
+single.family.2 <- filter( syr.dat, LandUse == "Single Family" )
+table(single.family.2$Nhood) %>% pander
+
+#Map
+br <- syr$Nhood == "Brighton"
+cw <- syr$Nhood == "Court-Woodlawn"
+d <- syr$Nhood == "Downtown"
+e <- syr$Nhood == "Eastwood"
+elm <- syr$Nhood == "Elmwood"
+fw <- syr$Nhood == "Far Westside"
+fs <- syr$Nhood == "Franklin Square"
+hg <- syr$Nhood == "Hawley-Green"
+l <- syr$Nhood == "Lakefront"
+lh <- syr$Nhood == "Lincoln Hill"
+m <- syr$Nhood == "Meadowbrook"
+ne <- syr$Nhood == "Near Eastside"
+nw <- syr$Nhood == "Near Westside"
+nv <- syr$Nhood == "North Valley"
+n <- syr$Nhood == "Northside"
+oc <- syr$Nhood == "Outer Comstock"
+pa <- syr$Nhood == "Park Ave."
+ph <- syr$Nhood == "Prospect Hill"
+ss <- syr$Nhood == "Salt Springs"
+s <- syr$Nhood == "Sedgwick"
+sc <- syr$Nhood == "Skunk City"
+scp <- syr$Nhood == "South Campus"
+sv <- syr$Nhood == "South Valley"
+s <- syr$Nhood == "Southside"
+sw <- syr$Nhood == "Southwest"
+str <- syr$Nhood == "Strathmore"
+th <- syr$Nhood == "Tipp Hill"
+uh <- syr$Nhood == "University Hill"
+un <-syr$Nhood == "University Neighborhood"
+ws <- syr$Nhood == "Washington Square"
+w <- syr$Nhood == "Westcott"
+ww <- syr$Nhood == "Winkworth"
+
+all.single.family <- ifelse(syr$LandUse == "Single Family" , "thistle2", NA)
+
+single.family <- ifelse(syr$LandUse == "Single Family" , 
+                        ifelse(br, "red", ifelse(cw,"green", ifelse(d , "blueviolet" , ifelse( e , "darkorange1" , ifelse( elm , "gold1", ifelse( fw , "firebrick2" , ifelse( fs , "green1", ifelse( hg , "honeydew2" , ifelse( l , "yellow1", ifelse( lh , "turquoise2", ifelse( m , "wheat1", ifelse( ne , "dodgerblue4", ifelse(nw , "burlywood2", ifelse(nv , "mediumorchid", ifelse( n , "maroon" , ifelse( oc , "lightslateblue", ifelse( pa , "lightsalmon1" , ifelse( ph , "lightpink1" , ifelse( ss , "lightcyan", ifelse( s , "lightcoral" , ifelse( str , "olivedrab1" , ifelse(th , "midnightblue" , ifelse( uh , "mediumvioletred" , ifelse( un , "mediumpurple4" , ifelse( ws , "tomato" , ifelse( w , "springgreen3" , ifelse( ww , "slateblue1" , NA))))))))))))))))))))))))))), NA)
+
+plot(syr, border = FALSE, col="gray80")
+plot(syr, border = FALSE , col = all.single.family, add=TRUE)
+plot( syr, border = FALSE, col=single.family , add=TRUE ) 
+
+title( main="Single Family Homes by Neighborhood")
+
+#empty vector light gray and repeat from 1 to the number of parcels use 
+#pallate function -- ask for colors by factor will use colors in pallet, if you do a plot -- make nhood a factor and then use color function to make pallet have 40 colors -- copy nhood factor, if not sinlge family then assign NA
+
+
+```
+
+###Question 2: Percent of Single Family Homes by Neighborhood and Value per Acre
+
+```{r}
+#Table
+syr.single.price <- syr[syr$LandUse == "Single Family" & syr$AssessedVa > "200000" , ]
+round(prop.table(table(syr.single.price$Nhood))*100, 2) %>% pander
+
+#Map
+syr.dat.2 <- mutate( syr.dat, value.per.acre = syr.dat$AssessedVa/syr.dat$Acres )
+syr.2 <- merge( syr , syr.dat.2 ) 
+
+color.function <- colorRampPalette( c("light gray", "midnightblue" ) )
+col.ramp <- color.function( 5 )
+
+color.vector <- cut( syr.2$value.per.acre , breaks = c(0, 270000, 400000, 520000, 670000 , 100000000 ) , labels = col.ramp)
+color.vector <- as.character( color.vector )
+
+plot(syr.2, border=FALSE, col=color.vector)
+
+
+title( main="Value per Acre")
+
+legend.text=c("$270,000 or less", "$270,000 - $400,000", "$400,000 - $520,000", "$520,000 - $670,000", "over $670,000")
+
+legend( "bottomright", bg="white",
+        pch=19, pt.cex=1.5, cex=0.7,
+        legend=legend.text, 
+        col=col.ramp, 
+        box.col="white",
+        title="Value per Acre" 
+)
+
+
+
+```
+
+###Question 3: Age of Homes
+
+```{r}
+#Table
+syr.ages <- mutate( syr.dat , age = 2017 - as.numeric(as.character(YearBuilt)))
+
+syr.grouped <- group_by(syr.ages , Nhood)
+tab <- summarise(syr.grouped , "10th" = quantile(na.omit(age), .1) , "25th" = quantile(na.omit(age), .25) , "50th" = quantile(na.omit(age), .5) ,  "75th" = quantile(na.omit(age), .75) , "90th" = quantile(na.omit(age), .9) )
+tab %>% pander
+
+#Map
+dec <- cut( as.numeric(as.character(syr$YearBuilt)) , breaks = c( 0, 1900 , seq(1910, 2020, 10)))
+
+color.function <- colorRampPalette( c("light gray", "midnightblue" ) )
+col.ramp <- color.function( 13 )
+
+color.vector <- cut( as.numeric(as.character(syr$YearBuilt)) , breaks = c( 0, 1900 , seq(1910, 2020, 10)), labels = col.ramp )
+color.vector <- as.character( color.vector )
+
+plot(syr, border=FALSE, col=color.vector)
+
+
+title( main="Age of Houses")
+
+#map.scale( metric=F, ratio=F, relwidth = 0.15, cex=0.5 )
+
+legend.text=c("1900 or earlier", "1910s", "1920s", "1930s", "1940s", "1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s")
+
+legend( "bottomright", bg="white",
+        pch=19, pt.cex=1.5, cex=0.7,
+        legend=legend.text, 
+        col=col.ramp, 
+        box.col="white",
+        title="Decade Built" 
+)
+
+```
+
+
+
