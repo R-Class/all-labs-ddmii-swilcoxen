@@ -124,6 +124,7 @@ legend( "bottomright", bg="white",
 ```{r}
 #Table
 syr.ages <- mutate( syr.dat , age = 2017 - as.numeric(as.character(YearBuilt)))
+syr.ages <- syr.ages[ syr.ages$age < 2017 , ]
 
 syr.grouped <- group_by(syr.ages , Nhood)
 tab <- summarise(syr.grouped , "10th" = quantile(na.omit(age), .1) , "25th" = quantile(na.omit(age), .25) , "50th" = quantile(na.omit(age), .5) ,  "75th" = quantile(na.omit(age), .75) , "90th" = quantile(na.omit(age), .9) )

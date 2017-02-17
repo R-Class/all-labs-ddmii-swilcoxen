@@ -581,6 +581,7 @@ legend( &quot;bottomright&quot;, bg=&quot;white&quot;,
 <h3>Question 3: Age of Homes</h3>
 <pre class="r"><code>#Table
 syr.ages &lt;- mutate( syr.dat , age = 2017 - as.numeric(as.character(YearBuilt)))
+syr.ages &lt;- syr.ages[ syr.ages$age &lt; 2017 , ]
 
 syr.grouped &lt;- group_by(syr.ages , Nhood)
 tab &lt;- summarise(syr.grouped , &quot;10th&quot; = quantile(na.omit(age), .1) , &quot;25th&quot; = quantile(na.omit(age), .25) , &quot;50th&quot; = quantile(na.omit(age), .5) ,  &quot;75th&quot; = quantile(na.omit(age), .75) , &quot;90th&quot; = quantile(na.omit(age), .9) )
@@ -623,11 +624,11 @@ tab %&gt;% pander</code></pre>
 </tr>
 <tr class="odd">
 <td align="center">Downtown</td>
-<td align="center">37.0</td>
-<td align="center">57.00</td>
-<td align="center">87.0</td>
-<td align="center">117.00</td>
-<td align="center">2017.0</td>
+<td align="center">34.0</td>
+<td align="center">47.00</td>
+<td align="center">67.0</td>
+<td align="center">96.00</td>
+<td align="center">117.0</td>
 </tr>
 <tr class="even">
 <td align="center">Eastwood</td>
@@ -635,53 +636,53 @@ tab %&gt;% pander</code></pre>
 <td align="center">74.00</td>
 <td align="center">88.0</td>
 <td align="center">97.00</td>
-<td align="center">107.0</td>
+<td align="center">102.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Elmwood</td>
 <td align="center">62.0</td>
 <td align="center">82.00</td>
 <td align="center">90.0</td>
-<td align="center">102.00</td>
+<td align="center">99.50</td>
 <td align="center">117.0</td>
 </tr>
 <tr class="even">
 <td align="center">Far Westside</td>
 <td align="center">67.0</td>
 <td align="center">92.00</td>
-<td align="center">107.0</td>
+<td align="center">102.0</td>
 <td align="center">117.00</td>
 <td align="center">127.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Franklin Square</td>
 <td align="center">27.0</td>
-<td align="center">37.00</td>
-<td align="center">67.0</td>
-<td align="center">87.00</td>
-<td align="center">114.6</td>
+<td align="center">36.00</td>
+<td align="center">58.0</td>
+<td align="center">77.00</td>
+<td align="center">97.0</td>
 </tr>
 <tr class="even">
 <td align="center">Hawley-Green</td>
-<td align="center">57.0</td>
-<td align="center">77.00</td>
-<td align="center">111.0</td>
-<td align="center">127.00</td>
-<td align="center">167.0</td>
+<td align="center">55.4</td>
+<td align="center">72.00</td>
+<td align="center">102.0</td>
+<td align="center">117.00</td>
+<td align="center">137.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Lakefront</td>
-<td align="center">32.1</td>
-<td align="center">56.75</td>
+<td align="center">31.0</td>
+<td align="center">52.00</td>
 <td align="center">67.0</td>
-<td align="center">117.00</td>
-<td align="center">2017.0</td>
+<td align="center">97.00</td>
+<td align="center">117.0</td>
 </tr>
 <tr class="even">
 <td align="center">Lincoln Hill</td>
-<td align="center">52.0</td>
+<td align="center">49.6</td>
 <td align="center">87.00</td>
-<td align="center">99.5</td>
+<td align="center">97.0</td>
 <td align="center">117.00</td>
 <td align="center">137.0</td>
 </tr>
@@ -696,31 +697,31 @@ tab %&gt;% pander</code></pre>
 <tr class="even">
 <td align="center">Near Eastside</td>
 <td align="center">30.0</td>
-<td align="center">67.00</td>
+<td align="center">62.25</td>
 <td align="center">87.0</td>
-<td align="center">107.00</td>
+<td align="center">105.75</td>
 <td align="center">117.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Near Westside</td>
 <td align="center">26.0</td>
-<td align="center">82.00</td>
+<td align="center">77.00</td>
 <td align="center">97.0</td>
 <td align="center">117.00</td>
-<td align="center">136.8</td>
+<td align="center">127.0</td>
 </tr>
 <tr class="even">
 <td align="center">North Valley</td>
 <td align="center">57.0</td>
 <td align="center">62.00</td>
 <td align="center">82.0</td>
-<td align="center">94.00</td>
+<td align="center">93.00</td>
 <td align="center">107.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Northside</td>
-<td align="center">82.0</td>
-<td align="center">94.50</td>
+<td align="center">79.0</td>
+<td align="center">93.25</td>
 <td align="center">107.0</td>
 <td align="center">117.00</td>
 <td align="center">127.0</td>
@@ -728,40 +729,40 @@ tab %&gt;% pander</code></pre>
 <tr class="even">
 <td align="center">Outer Comstock</td>
 <td align="center">42.0</td>
-<td align="center">56.00</td>
-<td align="center">67.0</td>
-<td align="center">77.00</td>
-<td align="center">97.0</td>
+<td align="center">55.00</td>
+<td align="center">65.5</td>
+<td align="center">72.00</td>
+<td align="center">92.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Park Ave.</td>
-<td align="center">67.0</td>
+<td align="center">64.0</td>
 <td align="center">87.00</td>
-<td align="center">102.0</td>
+<td align="center">101.0</td>
 <td align="center">117.00</td>
-<td align="center">127.0</td>
+<td align="center">122.0</td>
 </tr>
 <tr class="even">
 <td align="center">Prospect Hill</td>
 <td align="center">37.0</td>
-<td align="center">74.50</td>
+<td align="center">67.00</td>
 <td align="center">97.0</td>
 <td align="center">117.00</td>
-<td align="center">137.0</td>
+<td align="center">127.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Salt Springs</td>
 <td align="center">49.0</td>
-<td align="center">61.00</td>
-<td align="center">75.0</td>
-<td align="center">91.00</td>
+<td align="center">60.00</td>
+<td align="center">72.0</td>
+<td align="center">89.00</td>
 <td align="center">97.0</td>
 </tr>
 <tr class="even">
 <td align="center">Sedgwick</td>
 <td align="center">64.0</td>
 <td align="center">77.00</td>
-<td align="center">88.0</td>
+<td align="center">87.0</td>
 <td align="center">97.00</td>
 <td align="center">112.0</td>
 </tr>
@@ -787,7 +788,7 @@ tab %&gt;% pander</code></pre>
 <td align="center">59.00</td>
 <td align="center">67.0</td>
 <td align="center">87.00</td>
-<td align="center">98.0</td>
+<td align="center">97.0</td>
 </tr>
 <tr class="even">
 <td align="center">Southside</td>
@@ -795,14 +796,14 @@ tab %&gt;% pander</code></pre>
 <td align="center">87.00</td>
 <td align="center">97.0</td>
 <td align="center">117.00</td>
-<td align="center">127.0</td>
+<td align="center">117.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Southwest</td>
-<td align="center">23.4</td>
-<td align="center">47.00</td>
-<td align="center">97.0</td>
-<td align="center">110.00</td>
+<td align="center">23.0</td>
+<td align="center">42.00</td>
+<td align="center">95.0</td>
+<td align="center">107.00</td>
 <td align="center">117.0</td>
 </tr>
 <tr class="even">
@@ -810,12 +811,12 @@ tab %&gt;% pander</code></pre>
 <td align="center">62.0</td>
 <td align="center">82.00</td>
 <td align="center">92.0</td>
-<td align="center">100.00</td>
+<td align="center">99.00</td>
 <td align="center">117.0</td>
 </tr>
 <tr class="odd">
 <td align="center">Tipp Hill</td>
-<td align="center">72.5</td>
+<td align="center">72.0</td>
 <td align="center">92.00</td>
 <td align="center">107.0</td>
 <td align="center">117.00</td>
@@ -823,11 +824,11 @@ tab %&gt;% pander</code></pre>
 </tr>
 <tr class="even">
 <td align="center">University Hill</td>
-<td align="center">34.0</td>
-<td align="center">47.00</td>
-<td align="center">67.0</td>
-<td align="center">97.00</td>
-<td align="center">2017.0</td>
+<td align="center">33.0</td>
+<td align="center">44.00</td>
+<td align="center">57.0</td>
+<td align="center">77.00</td>
+<td align="center">97.0</td>
 </tr>
 <tr class="odd">
 <td align="center">University Neighborhood</td>
@@ -839,9 +840,9 @@ tab %&gt;% pander</code></pre>
 </tr>
 <tr class="even">
 <td align="center">Washington Square</td>
-<td align="center">71.8</td>
+<td align="center">70.0</td>
 <td align="center">87.00</td>
-<td align="center">109.0</td>
+<td align="center">107.0</td>
 <td align="center">127.00</td>
 <td align="center">147.0</td>
 </tr>
