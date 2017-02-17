@@ -1,9 +1,7 @@
 ---
 title: "Lab 04"
 output:  
-  html_document:
-  df_print: paged
-  keep_md: true 
+  github_document
 ---
 
 ```{r setup, include=FALSE}
