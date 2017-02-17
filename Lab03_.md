@@ -1,33 +1,7 @@
----
-title: "Lab 03"
-output:  
-  github_document 
----
+Lab 03
+================
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set( message=F, warning=F )
-
-#Set up
-
-setwd("/Users/Stephanie/Google Drive/ssw/MPA/DDM 2/syr shape files")
-unzip("01-05-2015.zip")
-
-library(maptools)
-library(sp)
-library(dplyr)
-
-devtools::install_github("hrecht/censusapi")
-cenesuskey <- "cc0582f55dc6c9f75f5ea92824c86e0ae5d0d5d8"
-library(censusapi)
-
-syr <- readShapePoly(fn="01-05-2015",
-                     proj4string=CRS("+proj=longlat +datum=WGS84"))
-
-#plot(syr, border="gray80")
-
-```
-
-```{r}
+``` r
 #Data set
 
 acs5_2015 <- getCensus(name = "acs5", vintage = 2015, key = cenesuskey, vars = c("NAME", "B19013_001E", "B01002A_001E", "B19025_001E"), region = "tract:*", regionin = "state:36")
@@ -35,11 +9,9 @@ syr.census <- acs5_2015[ acs5_2015$county == "067" , ]
 syr.census <- mutate( syr.census, tract.num = as.numeric(tract)/100)
 
 syr.shape.census <- merge(syr, syr.census, by.x="CensusTrac", by.y="tract.num")
-
-
 ```
 
-```{r}
+``` r
 #Map of median household income--red is low, blue is high
 
 color.function <- colorRampPalette( c("firebrick4","light gray", "steel blue" ) )
@@ -65,12 +37,11 @@ legend( "bottomright", bg="white",
         box.col="white",
         title="Median Household Income" 
 )
-
-
 ```
 
-```{r}
+![](Lab03__files/figure-markdown_github/unnamed-chunk-2-1.png)
 
+``` r
 #Map of aggregate family income--red is low, blue is red
 
 color.function.3 <- colorRampPalette( c("firebrick4","light gray", "steel blue" ) )
@@ -95,12 +66,11 @@ legend( "bottomright", bg="white",
         box.col="white",
         title="Aggregate Household Income" 
 )
-
 ```
 
+![](Lab03__files/figure-markdown_github/unnamed-chunk-3-1.png)
 
-
-```{r}
+``` r
 #Map of age--red is high, blue is low 
 
 color.function.2 <- colorRampPalette( c("steel blue","light gray","firebrick4") )
@@ -126,8 +96,6 @@ legend( "bottomright", bg="white",
         box.col="white",
         title="Median Age" 
 )
-
 ```
 
-
-
+![](Lab03__files/figure-markdown_github/unnamed-chunk-4-1.png)
