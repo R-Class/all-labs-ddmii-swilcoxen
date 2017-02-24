@@ -1,0 +1,103 @@
+---
+title: "Lab05"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( message=F, warning=F )
+#Data Setup
+
+library(ggmap)
+library(RCurl)
+library(sp)
+library(maptools)
+devtools::install_github("hrecht/censusapi")
+cenesuskey <- "cc0582f55dc6c9f75f5ea92824c86e0ae5d0d5d8"
+library(censusapi)
+library(dplyr)
+library(pander)
+
+#Zillow Data
+
+my.url <- "https://docs.google.com/spreadsheets/d/1W0vM5sCRhZjkQh6A0WGV8j1rhQAjecCrQW7PguHft-E/pub?gid=1989082857&single=true&output=csv"
+housing.raw <- getURL( my.url, ssl.verifypeer=FALSE )
+zill.dat <- read.csv( textConnection(housing.raw), stringsAsFactors=FALSE )
+
+names( zill.dat ) <- c("timestamp","price","X1","X2","sqft","your.name","lot.size","beds",
+                  "bath","garage","year","elementary","middle","high","walk","tax","highway",
+                  "restaurant","starbucks","park","mall","address","zip","tract" )
+
+zill.dat$price <- as.numeric( gsub( ",","", zill.dat$price ) )
+zill.dat$tax <- as.numeric( gsub( ",","", zill.dat$tax ) )
+zill.dat$lot.size <- as.numeric( gsub( ",","", zill.dat$lot.size ) )
+zill.dat$sqft <- as.numeric( gsub( ",","", zill.dat$sqft ) )
+
+
+#Shapefiles
+
+download.file("ftp://ftp2.census.gov/geo/tiger/TIGER2010/TRACT/2010/tl_2010_36067_tract10.zip", "onondaga census tracts.zip" )
+
+unzip( "onondaga census tracts.zip" )
+
+file.remove( "onondaga census tracts.zip" )
+
+onondoga <- readShapePoly( fn="tl_2010_36067_tract10", proj4string=CRS("+proj=longlat +datum=WGS84") )
+
+```
+
+```{r}
+#Geocode house adresses
+houses <- zill.dat[ , c("address","zip") ]
+
+
+houses$address <- gsub( ",", "", houses$address )
+houses$address <- gsub( "\\.", "", houses$address )
+
+addresses <- paste( houses$address, "Syracuse, NY", houses$zip, sep=", " )
+
+lat.long.test <- geocode(addresses[1:6])
+
+lat.long <- read.csv( "https://raw.githubusercontent.com/lecy/hedonic-prices/master/Data/lat.long.csv")
+
+#Add in lat and long, reorder lat and lon
+zill.dat.2 <- cbind( zill.dat, lat.long )
+
+order <- c("lon" , "lat")
+zill.ordered <- zill.dat.2[ order ]
+
+#Spatial Join Zillow data (geocoded) with shapefiles
+zill.spatial <- SpatialPoints(zill.ordered,
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+zill.over <- over(zill.spatial , onondoga)
+zill.shape <- cbind(zill.dat.2, zill.over)
+
+```
+
+```{r}
+#Add census data
+
+acs5_2015 <- getCensus(name = "acs5", vintage = 2015, key = cenesuskey, vars = c("NAME"), region = "tract:*", regionin = "state:36")
+syr.census <- acs5_2015[ acs5_2015$county == "067" , ]
+zill.shape.census <- merge( zill.shape, syr.census, by.x="TRACTCE10" , by.y= "tract", all.x=TRUE)
+
+```
+
+```{r}
+#add crime data
+crime <- read.csv("https://raw.githubusercontent.com/lecy/hedonic-prices/master/Data/crime.lat.lon.csv")
+crime.spatial <- SpatialPoints(crime,
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+crime.over <- over(crime.spatial, onondoga)
+crime.shape <- cbind(crime, crime.over)
+
+#count crimes
+crime.grpuped <- group_by(crime.shape , TRACTCE10)
+crime.count <- as.data.frame(summarise(crime.grpuped , crimes.in.tract = n() ))
+
+#merge crime count to data
+zill.shape.census.crime <- merge(zill.shape.census , crime.count , by="TRACTCE10")
+
+head(zill.shape.census.crime) %>% pander
+
+```
