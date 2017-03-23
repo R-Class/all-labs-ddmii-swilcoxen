@@ -1,0 +1,184 @@
+---
+title: "Lab06"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( message=F, warning=F )
+#Data Setup
+
+library(ggmap)
+library(RCurl)
+library(sp)
+library(maptools)
+devtools::install_github("hrecht/censusapi")
+cenesuskey <- "cc0582f55dc6c9f75f5ea92824c86e0ae5d0d5d8"
+library(censusapi)
+library(dplyr)
+library(pander)
+library(raster)
+library(rgeos)
+library(rgdal)
+library(geojsonio)
+
+#Data for Part I: onondaga shapefiles with zillow data
+
+#Onondaga Shapefiles
+
+download.file("ftp://ftp2.census.gov/geo/tiger/TIGER2010/TRACT/2010/tl_2010_36067_tract10.zip", "onondaga census tracts.zip" )
+
+unzip( "onondaga census tracts.zip" )
+
+file.remove( "onondaga census tracts.zip" )
+
+onondaga <- readShapePoly( fn="tl_2010_36067_tract10", proj4string=CRS("+proj=longlat +datum=WGS84") )
+
+
+
+#Zillow Data
+
+my.url <- "https://docs.google.com/spreadsheets/d/1W0vM5sCRhZjkQh6A0WGV8j1rhQAjecCrQW7PguHft-E/pub?gid=1989082857&single=true&output=csv"
+housing.raw <- getURL( my.url, ssl.verifypeer=FALSE )
+zill.dat <- read.csv( textConnection(housing.raw), stringsAsFactors=FALSE )
+
+names( zill.dat ) <- c("timestamp","price","X1","X2","sqft","your.name","lot.size","beds",
+                  "bath","garage","year","elementary","middle","high","walk","tax","highway",
+                  "restaurant","starbucks","park","mall","address","zip","tract" )
+
+zill.dat$price <- as.numeric( gsub( ",","", zill.dat$price ) )
+zill.dat$tax <- as.numeric( gsub( ",","", zill.dat$tax ) )
+zill.dat$lot.size <- as.numeric( gsub( ",","", zill.dat$lot.size ) )
+zill.dat$sqft <- as.numeric( gsub( ",","", zill.dat$sqft ) )
+
+
+#Geocode house adresses from Zillow Data
+
+houses <- zill.dat[ , c("address","zip") ]
+
+
+houses$address <- gsub( ",", "", houses$address )
+houses$address <- gsub( "\\.", "", houses$address )
+
+addresses <- paste( houses$address, "Syracuse, NY", houses$zip, sep=", " )
+
+lat.long.test <- geocode(addresses[1:6])
+
+lat.long <- read.csv("https://raw.githubusercontent.com/lecy/hedonic-prices/master/Data/lat.long.csv")
+
+#Add in lat and long
+
+zill.dat.2 <- cbind( zill.dat, lat.long )
+
+order <- c("lon" , "lat")
+
+zill.ordered <- zill.dat.2[ order ]
+
+#Zillow data as spatial
+
+zill.spatial <- SpatialPoints(zill.ordered,
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+
+```
+
+```{r}
+
+#Road Data
+
+download.file("ftp://ftp2.census.gov/geo/tiger/TIGER2015/PRISECROADS/tl_2015_36_prisecroads.zip", "primary_and_secondary_roads.zip" )
+unzip( "primary_and_secondary_roads.zip" )
+file.remove( "primary_and_secondary_roads.zip" )
+
+roads <- readShapeLines( fn="tl_2015_36_prisecroads", proj4string=CRS("+proj=longlat +datum=WGS84") )
+
+#source('C:/Users/STEPHA~1/AppData/Local/Temp/Download Road Shapefiles.R')
+
+interstate <- roads[ roads$RTTYP == "I" , ]
+
+#Plot
+par( mar=c(0,0,0,0) )
+plot( onondaga,  border="gray80" )
+plot( roads, col="steelblue", lwd=2, add=T )
+plot( interstate, col="red", add=T )
+
+```
+
+```{r}
+#Clip roads to size of county
+
+gClip <- function(shp, bb){
+  if(class(bb) == "matrix") b_poly <- as(extent(as.vector(t(bb))), "SpatialPolygons")
+  else b_poly <- as(extent(bb), "SpatialPolygons")
+  gIntersection(shp, b_poly, byid = T)
+}
+
+roads_clipped <- gClip( interstate , onondaga)
+
+par( mar=c(0,0,0,0) )
+plot( onondaga,  border="gray80" )
+plot( roads_clipped, col="red", add = T )
+
+```
+
+```{r}
+#Create buffer quarter mile from intersate, disolve
+
+buff1 <- gBuffer( roads_clipped, width=.005, byid=FALSE )
+plot(buff1)
+buff2 <- gUnaryUnion( buff1, id = NULL )
+
+
+plot(buff2, col="steelblue")
+#plot(onondaga, add = TRUE)
+plot(zill.spatial, col="red", add = TRUE)
+
+in.buff <- over(zill.spatial , buff2)
+
+zill.in.buff <- cbind( zill.dat.2 , in.buff)
+```
+
+###Part II
+
+```{r}
+#download geoJSON 
+
+u <- "https://raw.githubusercontent.com/lecy/geojson/master/syr_parcels.geojson"
+setwd("/Users/Stephanie/Google Drive/ssw/MPA/DDM 2")
+downloader::download(url = u, destfile = "/Users/Stephanie/Google Drive/ssw/MPA/DDM 2/syr_parcels.GeoJSON")
+syr.g <- readOGR(dsn="/Users/Stephanie/Google Drive/ssw/MPA/DDM 2/syr_parcels.GeoJSON", layer="OGRGeoJSON")
+
+
+
+#Buffer around Industrial Zones
+syr.I <- syr.g[syr.g$LandUse == "Industrial", ]
+
+buff.I <- gBuffer( syr.I, width = .001 , byid = TRUE)
+buff.I2 <- gUnaryUnion( buff.I, id = NULL )
+buff.I3 <- spTransform(buff.I2, CRS("+proj=longlat +datum=WGS84")) #need +datum=WGS84
+
+plot(buff.I3, col="steelblue")
+#plot(syr.g, add = TRUE)
+plot(zill.spatial, col = "red", add = TRUE)
+
+in.buff.I <- over(zill.spatial , buff.I3)
+
+zill.in.buff.I <- cbind( zill.dat.2 , in.buff.I)
+
+
+#Buffer around Schools
+syr.S <- syr.g[syr.g$LandUse == "Schools" , ]
+
+buff.S <- gBuffer( syr.S , width = .001 , byid = TRUE)
+buff.S2 <- gUnaryUnion( buff.S , id = NULL )
+buff.S3 <- spTransform(buff.S2, CRS("+proj=longlat +datum=WGS84"))
+
+plot(buff.S3, col="steelblue")
+#plot(syr.g, add = TRUE)
+plot(zill.spatial, col= "red", add = TRUE)
+
+in.buff.S <- over(zill.spatial , buff.S3)
+
+zill.in.buff.S <- cbind( zill.dat.2 , in.buff.S)
+
+```
+
